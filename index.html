@@ -20,15 +20,17 @@
             align-items: center;
             padding: 20px;
             color: #333;
+            background: #f5f7ff;
         }
         
         .container {
             width: 100%;
             max-width: 1000px;
-            background: rgba(255, 255, 255, 0.95);
+            background: white;
             border-radius: 20px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
             overflow: hidden;
+            position: relative;
         }
         
         header {
@@ -40,9 +42,31 @@
         }
         
         h1 {
-            font-size: 2.8rem;
+            font-size: 2.5rem;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .print-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        .print-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }
         
         .input-section {
@@ -77,6 +101,7 @@
             border-radius: 10px;
             font-size: 1.1rem;
             transition: all 0.3s;
+            background: white;
         }
         
         input:focus, select:focus, textarea:focus {
@@ -184,6 +209,16 @@
             display: none;
         }
         
+        .info-box {
+            background: #e9f7fe;
+            border-left: 4px solid #4e54c8;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 0 8px 8px 0;
+            font-size: 1rem;
+            color: #495057;
+        }
+        
         @keyframes popIn {
             0% {
                 transform: scale(0.5);
@@ -200,7 +235,7 @@
         
         @media (max-width: 768px) {
             h1 {
-                font-size: 2.2rem;
+                font-size: 2rem;
             }
             
             .input-group {
@@ -210,16 +245,49 @@
             .large-textarea {
                 min-height: 120px;
             }
+            
+            .print-btn {
+                top: 15px;
+                right: 15px;
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
         }
         
         @media (max-width: 480px) {
             h1 {
-                font-size: 1.8rem;
+                font-size: 1.6rem;
             }
             
             .large-textarea {
                 min-height: 100px;
                 padding: 15px;
+            }
+        }
+        
+        /* 打印样式 */
+        @media print {
+            .container {
+                box-shadow: none;
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            header, .input-section, .print-btn {
+                display: none;
+            }
+            
+            .grid-container {
+                padding: 10px;
+            }
+            
+            .grid {
+                gap: 4px;
+            }
+            
+            .grid-item {
+                box-shadow: none;
+                border: 1px solid #ccc;
             }
         }
     </style>
@@ -228,6 +296,9 @@
     <div class="container">
         <header>
             <h1><i class="fas fa-random"></i> 文字随机排序工具</h1>
+            <button class="print-btn" id="print-btn">
+                <i class="fas fa-print"></i> 打印
+            </button>
         </header>
         
         <section class="input-section">
@@ -261,6 +332,11 @@
             </button>
             
             <div class="error" id="error-message"></div>
+            
+            <div class="info-box">
+                <p><i class="fas fa-info-circle"></i> 提示：每个宫格中的文字都是唯一的，不会重复出现。</p>
+                <p>输入的文字数量必须大于或等于宫格总数（行数 × 列数）。</p>
+            </div>
         </section>
         
         <section class="grid-container">
@@ -279,9 +355,15 @@
             const colsInput = document.getElementById('cols');
             const cellSizeInput = document.getElementById('cell-size');
             const generateBtn = document.getElementById('generate-btn');
+            const printBtn = document.getElementById('print-btn');
             const grid = document.getElementById('grid');
             const gridPlaceholder = document.getElementById('grid-placeholder');
             const errorMessage = document.getElementById('error-message');
+            
+            // 添加打印功能
+            printBtn.addEventListener('click', function() {
+                window.print();
+            });
             
             // 生成网格
             generateBtn.addEventListener('click', generateGrid);
@@ -294,6 +376,7 @@
                 const rows = parseInt(rowsInput.value);
                 const cols = parseInt(colsInput.value);
                 const cellSize = parseInt(cellSizeInput.value);
+                const totalCells = rows * cols;
                 
                 // 验证输入
                 if (!text) {
@@ -316,6 +399,13 @@
                     return;
                 }
                 
+                // 检查文字数量是否足够（去重后）
+                const uniqueChars = [...new Set(text.split(''))];
+                if (uniqueChars.length < totalCells) {
+                    showError(`文字数量不足！需要至少 ${totalCells} 个不同的文字，当前只有 ${uniqueChars.length} 个不同的文字`);
+                    return;
+                }
+                
                 // 清除错误消息
                 errorMessage.style.display = 'none';
                 
@@ -328,8 +418,10 @@
                 grid.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
                 grid.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
                 
+                // 创建不重复的字符数组
+                const shuffledUniqueChars = shuffleArray([...uniqueChars]);
+                
                 // 生成网格项
-                const totalCells = rows * cols;
                 for (let i = 0; i < totalCells; i++) {
                     const gridItem = document.createElement('div');
                     gridItem.classList.add('grid-item');
@@ -338,17 +430,22 @@
                     gridItem.style.width = `${cellSize}px`;
                     gridItem.style.height = `${cellSize}px`;
                     
-                    // 从输入文本中随机选择一个字符
-                    const randomIndex = Math.floor(Math.random() * text.length);
-                    const randomChar = text[randomIndex];
-                    
-                    gridItem.textContent = randomChar;
+                    // 从去重后的字符数组中选择字符
+                    const char = shuffledUniqueChars[i];
+                    gridItem.textContent = char;
                     
                     // 添加点击事件
                     gridItem.addEventListener('click', function() {
-                        // 重新随机选择字符
-                        const newIndex = Math.floor(Math.random() * text.length);
-                        this.textContent = text[newIndex];
+                        // 重新随机选择字符（确保不重复）
+                        let newChar;
+                        do {
+                            const randomIndex = Math.floor(Math.random() * uniqueChars.length);
+                            newChar = uniqueChars[randomIndex];
+                        } while (Array.from(grid.children).some(item => 
+                            item !== this && item.textContent === newChar
+                        ));
+                        
+                        this.textContent = newChar;
                         this.style.animation = 'popIn 0.3s ease-out';
                         setTimeout(() => {
                             this.style.animation = '';
@@ -365,9 +462,21 @@
                 }
             }
             
+            // 数组洗牌函数（Fisher-Yates算法）
+            function shuffleArray(array) {
+                const result = [...array];
+                for (let i = result.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [result[i], result[j]] = [result[j], result[i]];
+                }
+                return result;
+            }
+            
             function showError(message) {
                 errorMessage.textContent = message;
                 errorMessage.style.display = 'block';
+                gridPlaceholder.style.display = 'block';
+                grid.innerHTML = '';
             }
         });
     </script>
