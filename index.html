@@ -179,7 +179,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.5rem;
             font-weight: bold;
             color: #4e54c8;
             box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
@@ -421,6 +420,9 @@
                 // 创建不重复的字符数组
                 const shuffledUniqueChars = shuffleArray([...uniqueChars]);
                 
+                // 计算字体大小（基于方格大小）
+                const fontSize = Math.min(cellSize * 0.6, 100); // 最大100px
+                
                 // 生成网格项
                 for (let i = 0; i < totalCells; i++) {
                     const gridItem = document.createElement('div');
@@ -429,6 +431,9 @@
                     // 设置单元格尺寸
                     gridItem.style.width = `${cellSize}px`;
                     gridItem.style.height = `${cellSize}px`;
+                    
+                    // 设置字体大小
+                    gridItem.style.fontSize = `${fontSize}px`;
                     
                     // 从去重后的字符数组中选择字符
                     const char = shuffledUniqueChars[i];
